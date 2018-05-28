@@ -108,10 +108,11 @@ function findBestTrackAngle( polygon, islands, width, distanceFromBoundary, cent
 		-- instead of just the number of tracks, consider some other factors. We prefer just one block (that is,
 		-- the field has a convex solution) and angles closest to the direction of the longest edge of the field
 		-- sin( angle - BestDir ) will be 0 when angle is the closest.
-		local angleScore = 3 * math.abs( math.sin( getDeltaAngle( math.rad( angle ), math.rad( bestDirection ))))
+		local angleScore = bestDirection and
+			3 * math.abs( math.sin( getDeltaAngle( math.rad( angle ), math.rad( bestDirection )))) or 0
 		score = 50 * smallBlockScore + 10 * #blocks + #tracks + angleScore
-		--courseGenerator.debug( "Tried angle=%d, nBlocks=%d, smallBlockScore=%d, tracks=%d, score=%.1f",
-		--	angle, #blocks, smallBlockScore, #tracks, score)
+		courseGenerator.debug( "Tried angle=%d, nBlocks=%d, smallBlockScore=%d, tracks=%d, score=%.1f",
+			angle, #blocks, smallBlockScore, #tracks, score)
 		table.insert( bestAngleStats, { angle=angle, nBlocks=#blocks, nTracks=#tracks, score=score, smallBlockScore=smallBlockScore })
 		if minScore > score then
 			minScore = score
@@ -144,11 +145,6 @@ end
 --- Generate up/down tracks covering a polygon at the optimum angle
 -- 
 function generateTracks( polygon, islands, width, extendTracks, nHeadlandPasses, centerSettings )
-	-- translate polygon so we can rotate it around its center. This way all points
-	-- will be approximately the same distance from the origo and the rotation calculation
-	-- will be more accurate
-	local bb = polygon:getBoundingBox()
-	local dx, dy = ( bb.maxX + bb.minX ) / 2, ( bb.maxY + bb.minY ) / 2
 	local distanceFromBoundary
 	if nHeadlandPasses == 0 then
 		-- ugly hack: if there are no headlands, our tracks go right up to the field boundary. So extend tracks
@@ -159,8 +155,14 @@ function generateTracks( polygon, islands, width, extendTracks, nHeadlandPasses,
 		distanceFromBoundary = width
 	end
 
-	local translatedPolygon = translatePoints( polygon, -dx , -dy )
+	-- translate polygon so we can rotate it around its center. This way all points
+	-- will be approximately the same distance from the origo and the rotation calculation
+	-- will be more accurate
+	local dx, dy = polygon:getCenter()
+	--local translatedPolygon = Polygon:copy(polygon)
+	translatedPolygon = translatePoints( polygon, -dx , -dy )
 	local translatedIslands = Island.translateAll( islands, -dx, -dy )
+
 	local bestAngle, nTracks, nBlocks, resultIsOk
 	-- Now, determine the angle where the number of tracks is the minimum
 	bestAngle, nTracks, nBlocks, resultIsOk = findBestTrackAngle( translatedPolygon, translatedIslands, width, distanceFromBoundary, centerSettings )
@@ -588,7 +590,7 @@ function splitCenterIntoBlocks( tracks, width )
 			courseGenerator.debug( 'Found track with odd number (%d) of intersections', #t.intersections )
 			table.remove( t.intersections, #t.intersections )
 		end
-		if t.to.x - t.from.x < 30 then
+		if t.to.x - t.from.x < 15 then
 			courseGenerator.debug( 'Found very short track %.1f m', t.to.x - t.from.x )
 		end
 		for i = 1, #t.intersections, 2 do

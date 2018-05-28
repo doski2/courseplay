@@ -24,6 +24,55 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 local maxDistanceFromField = 30
 local n
 
+
+-- calculate distance from previous headland at the current location.
+-- this is used for courseGenerator.HEADLAND_MODE_NARROW_FIELD to have the
+-- headlands on the short edge of the field all overlap completely, so on
+-- the short edge every headland pass will use the exact same path
+--  ,--------------------------------------------------------------,
+--  |--------------------------------------------------------------|
+--  |--------------------------------------------------------------|
+--  |--------------------------------------------------------------|
+--  |--------------------------------------------------------------|
+--  '--------------------------------------------------------------'
+local function getLocalDeltaOffset( polygon, point, mode, centerSettings, deltaOffset, currentPassNumber )
+	-- never touch the outermost headland pass
+	if currentPassNumber == 1 then return deltaOffset end
+	if mode == courseGenerator.HEADLAND_MODE_NARROW_FIELD then
+		local longDirectionAngle
+		if centerSettings.useLongestEdgeAngle or centerSettings.useBestAngle then
+			-- if no angle given, use the longest edge
+			-- TODO: implement best angle
+			longDirectionAngle = math.rad( polygon.bestDirection.dir )
+		elseif centerSettings.rowAngle then
+			longDirectionAngle = centerSettings.rowAngle
+		end
+		-- is the current edge in the long or short direction?
+		local da = getDeltaAngle( longDirectionAngle, point.nextEdge.angle )
+		-- the closer this edge's angle is to the longest edge, the bigger is the offset
+		--print( string.format( '%.1f, %.1f, %.1f', math.abs(math.deg(da)), math.deg( longDirectionAngle), math.deg( point.nextEdge.angle )))
+		return deltaOffset * math.abs( math.cos( da ))
+	else
+		return deltaOffset
+	end
+end
+
+-- smooth adds new points where we loose the passNumber attribute.
+-- here we fix that. I know it's ugly and there must be a better way to
+-- do this somehow smooth should preserve these, but whatever...
+local function addMissingPassNumber( headlandPath )
+	local currentPassNumber = 0
+	for i, point in headlandPath:iterator() do
+		if point.passNumber then
+			if point.passNumber ~= currentPassNumber then
+				currentPassNumber = point.passNumber
+			end
+		else
+			point.passNumber = currentPassNumber
+		end
+	end
+end
+
 --- Calculate a headland track inside polygon in offset distance
 function calculateHeadlandTrack( polygon, mode, targetOffset, minDistanceBetweenPoints, minSmoothAngle, maxSmoothAngle,
                                  currentOffset, doSmooth, inward, centerSettings, currentPassNumber )
@@ -203,60 +252,13 @@ function addTrackToHeadlandPath( headlandPath, track, passNumber, from, to, step
 	end
 end
 
--- smooth adds new points where we loose the passNumber attribute.
--- here we fix that. I know it's ugly and there must be a better way to 
--- do this somehow smooth should preserve these, but whatever...
-function addMissingPassNumber( headlandPath )
-	local currentPassNumber = 0
-	for i, point in headlandPath:iterator() do
-		if point.passNumber then
-			if point.passNumber ~= currentPassNumber then
-				currentPassNumber = point.passNumber
-			end
-		else
-			point.passNumber = currentPassNumber
-		end
-	end
-end
-
--- calculate distance from previous headland at the current location.
--- this is used for courseGenerator.HEADLAND_MODE_NARROW_FIELD to have the
--- headlands on the short edge of the field all overlap completely, so on
--- the short edge every headland pass will use the exact same path
---  ,--------------------------------------------------------------,
---  |--------------------------------------------------------------|
---  |--------------------------------------------------------------|
---  |--------------------------------------------------------------|
---  |--------------------------------------------------------------|
---  '--------------------------------------------------------------'
-function getLocalDeltaOffset( polygon, point, mode, centerSettings, deltaOffset, currentPassNumber )
-	-- never touch the outermost headland pass
-	if currentPassNumber == 1 then return deltaOffset end
-	if mode == courseGenerator.HEADLAND_MODE_NARROW_FIELD then
-		local longDirectionAngle
-		if centerSettings.useLongestEdgeAngle or centerSettings.useBestAngle then
-			-- if no angle given, use the longest edge
-			-- TODO: implement best angle
-			longDirectionAngle = math.rad( polygon.bestDirection.dir )
-		elseif centerSettings.rowAngle then
-			longDirectionAngle = centerSettings.rowAngle
-		end
-		-- is the current edge in the long or short direction?
-		local da = getDeltaAngle( longDirectionAngle, point.nextEdge.angle )
-		-- the closer this edge's angle is to the longest edge, the bigger is the offset
-		--print( string.format( '%.1f, %.1f, %.1f', math.abs(math.deg(da)), math.deg( longDirectionAngle), math.deg( point.nextEdge.angle )))
-		return deltaOffset * math.abs( math.cos( da ))
-	else
-		return deltaOffset
-	end
-end
 
 -- in courseGenerator.HEADLAND_MODE_NARROW_FIELD mode we want to lift the
 -- implements on the short edge (except for the outermost headland).
 -- So we mark those waypoints as connecting tracks here. (would have been
 -- too difficult to propagate this info from the grassfire algorithm so
 -- we just do it again here.
-function markShortEdgesAsConnectingTrack( headlands, mode, centerSettings )
+local function markShortEdgesAsConnectingTrack( headlands, mode, centerSettings )
 	for i, headland in ipairs( headlands ) do
 		for j, point in headland:iterator() do
 			local fakeWidth = 1
@@ -267,4 +269,57 @@ function markShortEdgesAsConnectingTrack( headlands, mode, centerSettings )
 			end
 		end
 	end
+end
+
+function generateAllHeadlandTracks(field, implementWidth, headlandSettings, centerSettings,
+	minDistanceBetweenPoints, minSmoothAngle, maxSmoothAngle, doSmooth, fromInside, turnRadius)
+
+	local previousTrack, startHeadlandPass, endHeadlandPass, step
+	if fromInside then
+		courseGenerator.debug( "Generating innermost headland track" )
+		local distanceOfInnermostHeadlandFromBoundary = ( implementWidth - implementWidth * headlandSettings.overlapPercent / 100 ) * ( headlandSettings.nPasses - 1 ) + implementWidth / 2
+		field.headlandTracks[ headlandSettings.nPasses ] = calculateHeadlandTrack( field.boundary, headlandSettings.mode, distanceOfInnermostHeadlandFromBoundary,
+			minDistanceBetweenPoints, minSmoothAngle, maxSmoothAngle, 0, doSmooth, true, centerSettings, nil )
+		roundCorners( field.headlandTracks[ headlandSettings.nPasses ], turnRadius )
+		previousTrack = field.headlandTracks[ headlandSettings.nPasses ]
+		startHeadlandPass = headlandSettings.nPasses - 1
+		endHeadlandPass = 1
+		step = -1
+	else
+		startHeadlandPass = 1
+		previousTrack = field.boundary
+		step = 1
+		if headlandSettings.mode == courseGenerator.HEADLAND_MODE_NARROW_FIELD then
+			-- in this mode we add headlands until they cover the entire field
+			-- (but use a finite number, not math.huge just to be on the safe side
+			endHeadlandPass = 100
+		else
+			endHeadlandPass = headlandSettings.nPasses
+		end
+	end
+	for j = startHeadlandPass, endHeadlandPass, step do
+		local width
+		if j == 1 and not fromInside then
+			-- when working from inside, the half width is already factored in when
+			-- the innermost pass is generated
+			width = implementWidth / 2
+		else
+			width = implementWidth * ( 100 - headlandSettings.overlapPercent ) / 100
+		end
+
+		field.headlandTracks[ j ] = calculateHeadlandTrack( previousTrack, headlandSettings.mode, width,
+			minDistanceBetweenPoints, minSmoothAngle, maxSmoothAngle, 0, doSmooth, not fromInside,
+			centerSettings, j )
+		courseGenerator.debug( "Generated headland track #%d, area %1.f, clockwise = %s", j, field.headlandTracks[ j ].area, tostring( field.headlandTracks[ j ].isClockwise ))
+		-- check if the area within the last headland has a reasonable size
+		local minArea = 0.75 * width * field.headlandTracks[ j ].circumference / 2
+
+		if ( field.headlandTracks[ j ].area >= previousTrack.area or field.headlandTracks[ j ].area <= minArea ) and not fromInside then
+			courseGenerator.debug( "Can't fit more headlands in field, using %d", j - 1 )
+			field.headlandTracks[ j ] = nil
+			break
+		end
+		previousTrack = field.headlandTracks[ j ]
+	end
+	markShortEdgesAsConnectingTrack( field.headlandTracks, headlandSettings.mode, centerSettings )
 end

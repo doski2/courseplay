@@ -585,7 +585,7 @@ end
 
 function Polyline:copy( other )
 	local newPolyline = {}
-	for i, p in ipairs( other ) do
+	for i, p in other:iterator() do
 		newPolyline[ i ] = copyPoint( p )
 	end
 	return setmetatable( newPolyline, self )
@@ -680,6 +680,12 @@ function Polyline:getBoundingBox()
 		if ( point.y > maxY ) then maxY = point.y end
 	end
 	return { minX=minX, maxX=maxX, minY=minY, maxY=maxY }
+end
+
+--- Get center of bounding box
+function Polyline:getCenter()
+	local bb = self:getBoundingBox()
+	return ( bb.maxX + bb.minX ) / 2, ( bb.maxY + bb.minY ) / 2
 end
 
 function Polyline:hasTurnWaypoint( iterator )
@@ -783,7 +789,7 @@ end
 
 --- In place translation
 function Polyline:translate( dx, dy )
-	for i, point in ipairs( self ) do
+	for i, point in self:iterator() do
 		point.x = point.x + dx
 		point.y = point.y + dy
 	end
@@ -832,8 +838,6 @@ function Polyline:removeGlitches()
 	end
 	self:calculateData()
 end
-
-
 
 --- Remove vertices between (and including) two indexes
 --
