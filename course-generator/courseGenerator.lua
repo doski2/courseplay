@@ -71,6 +71,8 @@ courseGenerator.HEADLAND_MODE_NARROW_FIELD = 3
 courseGenerator.HEADLAND_MODE_TWO_SIDE = 4
 courseGenerator.HEADLAND_MODE_MAX = 4
 
+courseGenerator.headlandModeTexts = { 'none', 'normal', 'narrow', 'two side'}
+
 function courseGenerator.isOrdinalDirection( startingLocation )
 	return startingLocation >= courseGenerator.STARTING_LOCATION_SW and
 		startingLocation <= courseGenerator.STARTING_LOCATION_SE

@@ -37,6 +37,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 --                  between -180 and +180, the value is the total
 --                  length of edges pointing in that range
 
+-- TODO: make point a real class
+function pointToString(p)
+	local fromAngle, toAngle = 'N/A', 'N/A'
+	if p.nextEdge then
+		toAngle = string.format('%.1f', math.deg(p.nextEdge.angle))
+	end
+	if p.prevEdge then
+		fromAngle = string.format('%.1f', math.deg(p.prevEdge.angle))
+	end
+	return string.format('x=%.1f y=%.1f %s -> %s', p.x, p.y, fromAngle, toAngle)
+end
+
 -- calculates the polar coordinates of x, y with some filtering
 -- around pi/2 where tan is infinite
 function toPolar( x, y )
@@ -61,7 +73,7 @@ function getDistanceBetweenPoints( p1, p2 )
 end
 
 function getClosestPointIndex( polygon, p )
-	local minDistance = 10000
+	local minDistance = math.huge
 	local ix
 	for i, vertex in polygon:iterator() do
 		local d = getDistanceBetweenPoints( vertex, p )
@@ -124,14 +136,17 @@ function applyLowPassFilter( polygon, angleThreshold, distanceThreshold )
 	local index = 1
 	while index <= #polygon do
 		local cp, np = polygon[ index], polygon[ index + 1 ]
-		-- need to recalculate the edge length as we are moving points
-		-- around here
-		local angle, length = toPolar( np.x - cp.x, np.y - cp.y )
-		local isTooClose = length < distanceThreshold
-		local isTooSharp = math.abs( getDeltaAngle( np.prevEdge.angle, cp.prevEdge.angle )) > angleThreshold
-		if isTooClose or isTooSharp then
-			-- replace current and next point with something in the middle
-			polygon[ index + 1 ].x, polygon[ index + 1 ].y = getPointInTheMiddle( cp, np )
+		local isTooClose, isTooSharp = false, false
+		if cp and np and cp.prevEdge and np.prevEdge then
+			-- need to recalculate the edge length as we are moving points
+			-- around here
+			local angle, length = toPolar( np.x - cp.x, np.y - cp.y )
+			isTooClose = length < distanceThreshold
+			isTooSharp =  math.abs( getDeltaAngle( np.prevEdge.angle, cp.prevEdge.angle )) > angleThreshold
+			if isTooClose or isTooSharp then
+				-- replace current and next point with something in the middle
+				polygon[ index + 1 ].x, polygon[ index + 1 ].y = getPointInTheMiddle( cp, np )
+			end
 		end
 		if isTooSharp or isTooClose then
 			table.remove( polygon, polygon:getIndex( index ))
@@ -565,6 +580,38 @@ end
 
 -- for 5.1 and 5.2 compatibility
 local unpack = unpack or table.unpack
+-------------------------------------------------------------------------------
+
+Point = {}
+Point.__index = Point
+
+--- Point constructor.
+-- Integer indices are the vertices of the polygon
+function Point:new(x, y)
+	local newPoint
+	newPoint = {x = x, y = y}
+	return setmetatable( newPoint, self )
+end
+
+function Point:copy( other )
+	local newPoint = {}
+	if other then
+		newPoint = copyPoint( other )
+	end
+	return setmetatable( newPoint, self )
+end
+
+function Point:translate(dx, dy)
+	self.x = self.x + dx
+	self.y = self.y + dy
+end
+
+function Point:rotate(angle)
+	self.x, self.y =
+		self.x * math.cos(angle) - self.y  * math.sin(angle),
+		self.x * math.sin(angle) + self.y  * math.cos(angle)
+end
+
 
 -------------------------------------------------------------------------------
 
@@ -583,6 +630,13 @@ function Polyline:new( vertices )
 	return setmetatable( newPolyline, self )
 end
 
+--- Create an empty clone of myself
+function Polyline:cloneEmpty()
+	local newPolyline = {}
+	return setmetatable( newPolyline, getmetatable(self))
+end
+
+
 function Polyline:copy( other )
 	local newPolyline = {}
 	for i, p in other:iterator() do
@@ -591,6 +645,17 @@ function Polyline:copy( other )
 	return setmetatable( newPolyline, self )
 end
 
+function Polyline:__tostring()
+	local result = ''
+	for i, p in self:iterator() do
+		result = result .. string.format('% 4d %s\n', i, pointToString(p))
+	end
+	return result
+end
+
+function Polyline:getIndex(index)
+	return math.max(0, math.min(index, #self))
+end
 
 --- Iterator that won't return nil for i < 1 and i > size
 function Polyline:iterator( from, to, step )
@@ -618,6 +683,32 @@ function Polyline:iterator( from, to, step )
 	end
 end
 
+--- Iterate starting at the end closest to point
+function Polyline:iterateFromEndClosestToPoint(point)
+	local dFromStart = getDistanceBetweenPoints(point, self[1])
+	local dFromEnd = getDistanceBetweenPoints(point, self[#self])
+	local startIx = dFromStart <= dFromEnd and 1 or #self
+	local endIx = dFromStart > dFromEnd and 1 or #self
+	local step = dFromStart <= dFromEnd and 1 or -1
+	return self:iterator(startIx, endIx, step)
+end
+
+--- Iterator to iterate over the edges of a polyline/polygon.
+-- will return #self - 1 edges for a polyline, #self edges for the
+-- polygon as it wraps around then.
+function Polyline:edgeIterator()
+	local i = 1
+	return function()
+		if ( i <= #self and self[i].nextEdge and #self > 1 ) then
+			local key,value, from = i, self[i].nextEdge, self[i]
+			i = i + 1
+			return key, value, from
+		else
+			return nil, nil, nil
+		end
+	end
+end
+
 function Polyline:calculateData()
 	local directionStats = {}
 	local dAngle = 0
@@ -626,6 +717,7 @@ function Polyline:calculateData()
 	local shortestEdgeLength = 1000
 	local dx, dy, angle, length
 	for i, point in self:iterator() do
+		point.prevEdge, point.nextEdge = nil, nil
 		local pp, cp, np = self[ i - 1 ], self[ i ], self[ i + 1 ]
 		if pp then
 			-- vector from the previous to this point
@@ -800,7 +892,7 @@ end
 function Polyline:rotate( angle )
 	local sin = math.sin( angle )
 	local cos = math.cos( angle )
-	for _, point in ipairs( self ) do
+	for _, point in self:iterator() do
 		point.x, point.y = point.x * cos - point.y  * sin, point.x * sin + point.y  * cos
 	end
 	self:calculateData()
@@ -856,11 +948,18 @@ function Polyline:removeElementsBetween( fromIx, toIx )
 	end
 end
 
+-- open line, no wrap around
+function Polyline:canWrapAround()
+	return false
+end
+
 -------------------------------------------------------------------------------
 
 Polygon = {}
 -- base class is the polyline
 setmetatable( Polygon, { __index = Polyline })
+-- TODO: is this really the right way to inherit metamethods?
+Polygon.__tostring = Polyline.__tostring
 
 Polygon.__index = function( t, k )
 	if not rawget( t, k ) and type( k ) == "number" then
@@ -871,6 +970,10 @@ Polygon.__index = function( t, k )
 	end
 end
 
+-- closed line, we can wrap around the ends
+function Polygon:canWrapAround()
+	return true
+end
 
 --- Always return a valid index to allow iterating over
 -- the beginning or end of a closed polygon.
