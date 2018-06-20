@@ -166,29 +166,29 @@
 		<text name="COURSEPLAY_CORNER_4" 								 text="Sureste" />
 		<text name="COURSEPLAY_CORNER_5" 								 text="Posición Actual Vehículo" />
 		<text name="COURSEPLAY_CORNER_6" 								 text="Última Posición Usada" />
-		<text name="COURSEPLAY_CORNER_7" 								 text="South-West (new)" />
-		<text name="COURSEPLAY_CORNER_8" 								 text="North-West (new)" />
-		<text name="COURSEPLAY_CORNER_9" 								 text="North-East (new)" />
-		<text name="COURSEPLAY_CORNER_10" 								 text="South-East (new)" />
-		<text name="COURSEPLAY_CORNER_11" 								 text="Select position on map" />
-		<text name="COURSEPLAY_CLICK_MAP_TO_SELECT_FIELD" 	 			 text="(click map to select field)" />
-		<text name="COURSEPLAY_CLICK_MAP_TO_SET_STARTING_POSITION"	 	 text="(click map to select starting position)" />
+		<text name="COURSEPLAY_CORNER_7" 								 text="Suroeste (new)" />
+		<text name="COURSEPLAY_CORNER_8" 								 text="Noroeste (new)" />
+		<text name="COURSEPLAY_CORNER_9" 								 text="Noreste (new)" />
+		<text name="COURSEPLAY_CORNER_10" 								 text="Sureste (new)" />
+		<text name="COURSEPLAY_CORNER_11" 								 text="Seleccionar posición en el mapa" />
+		<text name="COURSEPLAY_CLICK_MAP_TO_SELECT_FIELD" 	 			 text="(haga clic en el mapa para seleccionar el campo)" />
+		<text name="COURSEPLAY_CLICK_MAP_TO_SET_STARTING_POSITION"	 	 text="(haga clic en el mapa para seleccionar la posición inicial)" />
 		<text name="COURSEPLAY_START_WORKING_ON" 			             text="Start working on" />
-		<text name="COURSEPLAY_SKIP_ROWS"     			                 text="Skip rows" />
-		<text name="COURSEPLAY_UP_DOWN_ROWS"     			             text="Up/down rows" />
+		<text name="COURSEPLAY_SKIP_ROWS"     			                 text="Saltar filas" />
+		<text name="COURSEPLAY_UP_DOWN_ROWS"     			             text="Filas arriba / abajo" />
 		<text name="COURSEPLAY_HEADLAND_PASSES" 				         text="Headland passes" />
 		<text name="COURSEPLAY_HEADLAND_CORNERS" 				         text="Headland corners" />
 		<text name="COURSEPLAY_HEADLAND_CLOCKWISE" 				         text="Clockwise" />
 		<text name="COURSEPLAY_HEADLAND_COUNTERCLOCKWISE" 				 text="Counterclockwise" />
 		<text name="COURSEPLAY_HEADLAND_MODE_NONE"   				     text="None" />
 		<text name="COURSEPLAY_HEADLAND_MODE_NORMAL" 				     text="Around" />
-		<text name="COURSEPLAY_HEADLAND_MODE_NARROW_FIELD" 				 text="Narrow field" />
+		<text name="COURSEPLAY_HEADLAND_MODE_NARROW_FIELD" 				 text="Campo estrecho" />
 		<text name="COURSEPLAY_DIRECTION_1" 							 text="Norte" />
 		<text name="COURSEPLAY_DIRECTION_2" 							 text="Este" />
 		<text name="COURSEPLAY_DIRECTION_3" 							 text="Sur" />
 		<text name="COURSEPLAY_DIRECTION_4" 							 text="Oeste" />
 		<text name="COURSEPLAY_DIRECTION_5" 							 text="Automático" />
-		<text name="COURSEPLAY_DIRECTION_6" 							 text="Longest edge" />
+		<text name="COURSEPLAY_DIRECTION_6" 							 text="Borde más largo" />
 		<text name="COURSEPLAY_DIRECTION_7" 							 text="Manual" />
         <text name="COURSEPLAY_DIRECTION_N"                              text="N"/>
         <text name="COURSEPLAY_DIRECTION_NNE"                            text="NNE"/>
@@ -305,8 +305,8 @@
 		<text name="COURSEPLAY_DRIVECONTROL" 							 text="Ajustes Drive Control" />
 		<text name="COURSEPLAY_DRIVECONTROL_MODE_0" 					 text="automático" /> 
 		<text name="COURSEPLAY_DRIVECONTROL_MODE_1" 					 text="4x4 Siempre" />
-		<text name="COURSEPLAY_DRIVECONTROL_MODE_2" 					 text="4x4 Siempre + Difer. Delantero para trabajo de campo." />
-		<text name="COURSEPLAY_DRIVECONTROL_MODE_3" 					 text="4x4 Siempre + Difer. Trasero para trabajo de campo." />
+		<text name="COURSEPLAY_DRIVECONTROL_MODE_2" 					 text="4x4 Siempre + Difer.Delantero para trabajo de campo." />
+		<text name="COURSEPLAY_DRIVECONTROL_MODE_3" 					 text="4x4 Siempre + Difer.Trasero para trabajo de campo." />
 		<text name="COURSEPLAY_DRIVECONTROL_MODE_4" 					 text="4x4 Siempre + Ambos Difer. para trabajo de campo." />
 		<text name="COURSEPLAY_YES_NO_FIELDSCAN" 						 text="¿Desea usted que los campos sean escaneados automaticamente?" />
 		<text name="COURSEPLAY_YES_NO_WAGES" 							 text="¿Desea usted que sus trabajadores reciban un salario (%s/hora)?" />
@@ -354,7 +354,7 @@
 		<text name="COURSEPLAY_MODE10_SETTINGS"						     text="Ajustes BunkerSilo" />
 		<text name="COURSEPLAY_MODE10_BLADE_WIDTH" 					 	 text="Anchura niveladora" />
 		<text name="COURSEPLAY_MODE10_SILO_LOADEDBY" 					 text="El silo esta siendo llenado" />
-		<text name="COURSEPLAY_MODE10_DRIVINGTHROUGH" 					 text="cruzandolo" />
+		<text name="COURSEPLAY_MODE10_DRIVINGTHROUGH" 					 text="Conduccion a traves" />
 		<text name="COURSEPLAY_MODE10_REVERSE_UNLOADING" 			 	 text="descarga hacía atrás" />
 		
 		<text name="COURSEPLAY_FUEL_SEARCH_FOR"						     text="Recargar gasóleo en gasolinera" />
