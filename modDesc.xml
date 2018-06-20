@@ -70,7 +70,23 @@ Courseplay is a modification for Farming Simulator 17. It allows you to have man
 ]]></cz>
 		<es>
 <![CDATA[
-Courseplay is a modification for Farming Simulator 17. It allows you to have many different vehicles driving around autonomously and automatically, have them do field work, unload combines, drive fruit to selling points, fill a bunker or a trailer with a shovel, level and compact silage and much more...
+Courseplay es una modificación de Farming Simulator 17, que permite que varios vehículos conduzcan autónomamente los recorridos, realicen trabajos, recarguen cosechadoras, conduzcan fruta a los puntos de venta, llenen un búnker o un remolque con una pala, silos compactos y mucho más. más ...
+
+- GUI de ajuste de generador de curso
+   - Se agregó soporte para RO
+   - nuevo sistema de reconocimiento de tráfico
+   - la dirección de fila del trabajo de campo también se puede seleccionar manualmente ahora
+   - soporte para grandes islas
+  - multijugador habilitado
+- soporte para complemento de cosecha de paja
+- nueva opción para la generación de cursos para eludir islas pequeñas en campos
+- Se agregó soporte para el complemento del rociador (con el apoyo amistoso de David FONTAINE)
+- Añadida opción de convoy combinado
+- maniobra de giro para las esquinas del promontorio para evitar la falta de fruta
+- Opción añadida para alinearse con el primer waypoint en el modo 2, 4 y 6
+- Configuración fácil añadida para múltiples herramientas en un curso de trabajo de campo
+- Soporte para Plantium Edition (Still Work In Progress)
+- Corrección de errores
 ]]></es>
 
 		<it>
